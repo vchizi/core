@@ -339,20 +339,8 @@ class Updater extends BasicEmitter {
 			// check if the app is compatible with this version of ownCloud
 			$info = OC_App::getAppInfo($app);
 			if(!OC_App::isAppCompatible($version, $info)) {
-				OC_App::disable($app);
+				$disabledApps = OC_App::disable($app);
 				$this->emit('\OC\Updater', 'incompatibleAppDisabled', [$app]);
-			}
-			// no need to disable any app in case this is a non-core upgrade
-			if (!$isCoreUpgrade) {
-				continue;
-			}
-			// shipped apps will remain enabled
-			if (OC_App::isShipped($app)) {
-				continue;
-			}
-			// authentication and session apps will remain enabled as well
-			if (OC_App::isType($app, ['session', 'authentication'])) {
-				continue;
 			}
 		}
 		return $disabledApps;
