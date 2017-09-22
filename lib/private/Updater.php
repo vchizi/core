@@ -331,7 +331,6 @@ class Updater extends BasicEmitter {
 	 * @throws \Exception
 	 */
 	private function checkAppsRequirements() {
-		$isCoreUpgrade = $this->isCodeUpgrade();
 		$apps = OC_App::getEnabledApps();
 		$version = Util::getVersion();
 		$disabledApps = [];
@@ -346,17 +345,6 @@ class Updater extends BasicEmitter {
 		return $disabledApps;
 	}
 
-	/**
-	 * @return bool
-	 */
-	private function isCodeUpgrade() {
-		$installedVersion = $this->config->getSystemValue('version', '0.0.0');
-		$currentVersion = implode('.', Util::getVersion());
-		if (version_compare($currentVersion, $installedVersion, '>')) {
-			return true;
-		}
-		return false;
-	}
 
 	/**
 	 * @param array $disabledApps
