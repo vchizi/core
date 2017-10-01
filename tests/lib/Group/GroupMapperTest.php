@@ -54,12 +54,9 @@ class GroupMapperTest extends TestCase {
 
 		// create test users
 		for ($i = 1; $i <= 4; $i++) {
-
-
-			try {
-				$backendGroup = $mapper->getGroup("TestFind$i");
+			$backendGroup = $mapper->getGroup("TestFind$i");
+			if (!is_null($backendGroup)) {
 				$mapper->delete($backendGroup);
-			} catch (DoesNotExistException $ex) {
 			}
 
 			$backendGroup = new BackendGroup();
@@ -89,6 +86,14 @@ class GroupMapperTest extends TestCase {
 	}
 
 	/**
+	 * Test that deleting group should result in deleting all users, and violating that
+	 * should rise exception
+	 */
+	public function testDeleteFailed() {
+		//TODO: Test for getting exception with failed foreign key constrains
+	}
+
+	/**
 	 * find one record without lowercase
 	 */
 	public function testGet() {
@@ -113,11 +118,10 @@ class GroupMapperTest extends TestCase {
 
 	/**
 	 * find nothing because of lower case
-	 *
-	 * @expectedException \OCP\AppFramework\Db\DoesNotExistException
 	 */
 	public function testGetNone() {
-		$this->mapper->getGroup("testfind1");
+		$groupBackend = $this->mapper->getGroup("testfind1");
+		$this->assertNull($groupBackend);
 	}
 
 

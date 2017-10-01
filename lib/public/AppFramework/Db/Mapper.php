@@ -176,6 +176,23 @@ abstract class Mapper extends Access {
 	}
 
 	/**
+	 * Creates an entity from a row. Automatically determines the entity class
+	 * from the current mapper name (MyEntityMapper -> MyEntity).
+	 *
+	 * If row contains invalid attributes, exception BadFunctionCallException will
+	 * be raised
+	 *
+	 * @param array $row the row which should be converted to an entity
+	 * @return Entity the entity
+	 * @throws \BadFunctionCallException
+	 * @since 7.0.0
+	 */
+	public function mapRowToEntity($row) {
+		unset($row['DOCTRINE_ROWNUM']); // Remove oracle workaround for limit
+		return call_user_func($this->entityClass .'::fromRow', $row);
+	}
+
+	/**
 	 * Returns an db result and throws exceptions when there are more or less
 	 * results
 	 * @see findEntity
@@ -215,18 +232,6 @@ abstract class Mapper extends Access {
 		} else {
 			return $row;
 		}
-	}
-
-	/**
-	 * Creates an entity from a row. Automatically determines the entity class
-	 * from the current mapper name (MyEntityMapper -> MyEntity)
-	 * @param array $row the row which should be converted to an entity
-	 * @return Entity the entity
-	 * @since 7.0.0
-	 */
-	protected function mapRowToEntity($row) {
-		unset($row['DOCTRINE_ROWNUM']); // Remove oracle workaround for limit
-		return call_user_func($this->entityClass .'::fromRow', $row);
 	}
 
 	/**

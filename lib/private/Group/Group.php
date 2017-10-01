@@ -33,6 +33,12 @@ use OCP\IGroup;
 use OCP\IUser;
 
 class Group implements IGroup {
+
+	/**
+	 * @var string $displayName
+	 */
+	private $displayName;
+
 	/**
 	 * @var string $id
 	 */
@@ -64,6 +70,12 @@ class Group implements IGroup {
 	private $userManager;
 
 	/**
+	 * @var \OC\Group\BackendGroup $backendGroup
+	 */
+	private $backendGroup;
+
+	/**
+	 * // TODO: use BackendGroup here
 	 * @param string $gid
 	 * @param \OC\Group\Backend[] $backends
 	 * @param \OC\User\Manager $userManager
@@ -76,6 +88,10 @@ class Group implements IGroup {
 		$this->userManager = $userManager;
 		$this->emitter = $emitter;
 		$this->displayName = $displayName;
+	}
+
+	public function getBackendGroupId() {
+		return $this->backendGroup->getId();
 	}
 
 	public function getGID() {
@@ -95,6 +111,7 @@ class Group implements IGroup {
 	 * @return \OC\User\User[]
 	 */
 	public function getUsers() {
+		// TODO: Use MembershipManager->getGroupUserAccounts($gid)
 		if ($this->usersLoaded) {
 			return $this->users;
 		}
@@ -122,6 +139,7 @@ class Group implements IGroup {
 	 * @return bool
 	 */
 	public function inGroup($user) {
+		// TODO: Use MembershipManager->isGroupUser($userId, $gid)
 		if (isset($this->users[$user->getUID()])) {
 			return true;
 		}
@@ -140,6 +158,7 @@ class Group implements IGroup {
 	 * @param \OC\User\User $user
 	 */
 	public function addUser($user) {
+		// TODO: Use MembershipManager->addGroupMember($userId, $gid)
 		if ($this->inGroup($user)) {
 			return;
 		}
@@ -167,6 +186,7 @@ class Group implements IGroup {
 	 * @param \OC\User\User $user
 	 */
 	public function removeUser($user) {
+		// TODO: Use MembershipManager->removeGroupMember($userId, $gid)
 		$result = false;
 		if ($this->emitter) {
 			$this->emitter->emit('\OC\Group', 'preRemoveUser', [$this, $user]);
@@ -201,6 +221,7 @@ class Group implements IGroup {
 	 * @return \OC\User\User[]
 	 */
 	public function searchUsers($search, $limit = null, $offset = null) {
+		// TODO: Use MembershipManager->find($gid, $search, $searchLimit, $searchOffset)
 		$users = [];
 		foreach ($this->backends as $backend) {
 			$userIds = $backend->usersInGroup($this->gid, $search, $limit, $offset);
@@ -219,6 +240,7 @@ class Group implements IGroup {
 	 * @return int|bool
 	 */
 	public function count($search = '') {
+		// TODO: Use MembershipAdmin->count($gid, $search, $searchLimit, $searchOffset)
 		$users = false;
 		foreach ($this->backends as $backend) {
 			if($backend->implementsActions(\OC\Group\Backend::COUNT_USERS)) {
@@ -242,6 +264,7 @@ class Group implements IGroup {
 	 * @return \OC\User\User[]
 	 */
 	public function searchDisplayName($search, $limit = null, $offset = null) {
+		// TODO: Use MembershipManager->find($gid, $search, $searchLimit, $searchOffset)
 		$users = [];
 		foreach ($this->backends as $backend) {
 			$userIds = $backend->usersInGroup($this->gid, $search, $limit, $offset);
@@ -259,6 +282,7 @@ class Group implements IGroup {
 	 * @return bool
 	 */
 	public function delete() {
+		// TODO: Use MembershipManager->removeGroupMembers($gid) and GroupMapper->delete to do the job
 		// Prevent users from deleting group admin
 		if ($this->getGID() === 'admin') {
 			return false;
@@ -281,6 +305,8 @@ class Group implements IGroup {
 	}
 
 	/**
+	 * TODO: delete, not it will be useless
+	 *
 	 * returns all the Users from an array that really exists
 	 * @param string[] $userIds an array containing user IDs
 	 * @return \OC\User\User[] an Array with the userId as Key and \OC\User\User as value
@@ -306,6 +332,7 @@ class Group implements IGroup {
 	 * @since 10.0.0
 	 */
 	public function getBackend() {
+		// TODO: Use GroupBackend
 		// multiple backends can exist for the same group name,
 		// but in practice there is only a single one, so return that one
 		return $this->backends[0];
