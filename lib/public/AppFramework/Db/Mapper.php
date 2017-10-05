@@ -36,11 +36,9 @@ use OCP\IDb;
  * may be subject to change in the future
  * @since 7.0.0
  */
-abstract class Mapper {
+abstract class Mapper extends Access {
 
-	protected $tableName;
 	protected $entityClass;
-	protected $db;
 
 	/**
 	 * @param IDBConnection $db Instance of the Db abstraction layer
@@ -50,8 +48,7 @@ abstract class Mapper {
 	 * @since 7.0.0
 	 */
 	public function __construct(IDBConnection $db, $tableName, $entityClass=null){
-		$this->db = $db;
-		$this->tableName = '*PREFIX*' . $tableName;
+		parent::__construct($db, $tableName);
 
 		// if not given set the entity name to the class without the mapper part
 		// cache it here for later use since reflection is slow
@@ -62,16 +59,6 @@ abstract class Mapper {
 		}
 	}
 
-
-	/**
-	 * @return string the table name
-	 * @since 7.0.0
-	 */
-	public function getTableName(){
-		return $this->tableName;
-	}
-
-
 	/**
 	 * Deletes an entity from the table
 	 * @param Entity $entity the entity that should be deleted
@@ -79,12 +66,11 @@ abstract class Mapper {
 	 * @since 7.0.0 - return value added in 8.1.0
 	 */
 	public function delete(Entity $entity){
-		$sql = 'DELETE FROM `' . $this->tableName . '` WHERE `id` = ?';
+		$sql = 'DELETE FROM `' . $this->getTableName() . '` WHERE `id` = ?';
 		$stmt = $this->execute($sql, [$entity->getId()]);
 		$stmt->closeCursor();
 		return $entity;
 	}
-
 
 	/**
 	 * Creates a new entry in the db from an entity
@@ -120,19 +106,17 @@ abstract class Mapper {
 
 		}
 
-		$sql = 'INSERT INTO `' . $this->tableName . '`(' .
+		$sql = 'INSERT INTO `' . $this->getTableName() . '`(' .
 				$columns . ') VALUES(' . $values . ')';
 
 		$stmt = $this->execute($sql, $params);
 
-		$entity->setId((int) $this->db->lastInsertId($this->tableName));
+		$entity->setId((int) $this->getDbConnection()->lastInsertId($this->getTableName()));
 
 		$stmt->closeCursor();
 
 		return $entity;
 	}
-
-
 
 	/**
 	 * Updates an entry in the db from an entity
@@ -181,7 +165,7 @@ abstract class Mapper {
 			$i++;
 		}
 
-		$sql = 'UPDATE `' . $this->tableName . '` SET ' .
+		$sql = 'UPDATE `' . $this->getTableName() . '` SET ' .
 				$columns . ' WHERE `id` = ?';
 		$params[] = $id;
 
@@ -190,79 +174,6 @@ abstract class Mapper {
 
 		return $entity;
 	}
-
-	/**
-	 * Checks if an array is associative
-	 * @param array $array
-	 * @return bool true if associative
-	 * @since 8.1.0
-	 */
-	private function isAssocArray(array $array) {
-		return array_values($array) !== $array;
-	}
-
-	/**
-	 * Returns the correct PDO constant based on the value type
-	 * @param $value
-	 * @return int PDO constant
-	 * @since 8.1.0
-	 */
-	private function getPDOType($value) {
-		switch (gettype($value)) {
-			case 'integer':
-				return \PDO::PARAM_INT;
-			case 'boolean':
-				return \PDO::PARAM_BOOL;
-			default:
-				return \PDO::PARAM_STR;
-		}
-	}
-
-
-	/**
-	 * Runs an sql query
-	 * @param string $sql the prepare string
-	 * @param array $params the params which should replace the ? in the sql query
-	 * @param int $limit the maximum number of rows
-	 * @param int $offset from which row we want to start
-	 * @return \PDOStatement the database query result
-	 * @since 7.0.0
-	 */
-	protected function execute($sql, array $params=[], $limit=null, $offset=null) {
-		if ($this->db instanceof IDb) {
-			$query = $this->db->prepareQuery($sql, $limit, $offset);
-		} else {
-			$query = $this->db->prepare($sql, $limit, $offset);
-		}
-
-		if ($this->isAssocArray($params)) {
-			foreach ($params as $key => $param) {
-				$pdoConstant = $this->getPDOType($param);
-				$query->bindValue($key, $param, $pdoConstant);
-			}
-		} else {
-			$index = 1;  // bindParam is 1 indexed
-			foreach ($params as $param) {
-				$pdoConstant = $this->getPDOType($param);
-				$query->bindValue($index, $param, $pdoConstant);
-				$index++;
-			}
-		}
-
-		$result = $query->execute();
-
-		// this is only for backwards compatibility reasons and can be removed
-		// in owncloud 10. IDb returns a StatementWrapper from execute, PDO,
-		// Doctrine and IDbConnection don't so this needs to be done in order
-		// to stay backwards compatible for the things that rely on the
-		// StatementWrapper being returned
-		if ($result instanceof \OC_DB_StatementWrapper) {
-			return $result;
-		}
-
-		return $query;
-	}
-
 
 	/**
 	 * Returns an db result and throws exceptions when there are more or less
@@ -307,26 +218,6 @@ abstract class Mapper {
 	}
 
 	/**
-	 * Builds an error message by prepending the $msg to an error message which
-	 * has the parameters
-	 * @see findEntity
-	 * @param string $sql the sql query
-	 * @param array $params the parameters of the sql query
-	 * @param int $limit the maximum number of rows
-	 * @param int $offset from which row we want to start
-	 * @return string formatted error message string
-	 * @since 9.1.0
-	 */
-	private function buildDebugMessage($msg, $sql, array $params=[], $limit=null, $offset=null) {
-		return $msg .
-					': query "' .	$sql . '"; ' .
-					'parameters ' . print_r($params, true) . '; ' .
-					'limit "' . $limit . '"; '.
-					'offset "' . $offset . '"';
-	}
-
-
-	/**
 	 * Creates an entity from a row. Automatically determines the entity class
 	 * from the current mapper name (MyEntityMapper -> MyEntity)
 	 * @param array $row the row which should be converted to an entity
@@ -337,7 +228,6 @@ abstract class Mapper {
 		unset($row['DOCTRINE_ROWNUM']); // Remove oracle workaround for limit
 		return call_user_func($this->entityClass .'::fromRow', $row);
 	}
-
 
 	/**
 	 * Runs a sql query and returns an array of entities
@@ -362,7 +252,6 @@ abstract class Mapper {
 		return $entities;
 	}
 
-
 	/**
 	 * Returns an db result and throws exceptions when there are more or less
 	 * results
@@ -378,6 +267,4 @@ abstract class Mapper {
 	protected function findEntity($sql, array $params=[], $limit=null, $offset=null){
 		return $this->mapRowToEntity($this->findOneQuery($sql, $params, $limit, $offset));
 	}
-
-
 }
