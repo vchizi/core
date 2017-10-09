@@ -26,13 +26,14 @@ timestampedNode('SLAVE') {
 
     stage 'PHPUnit 7.1/sqlite (with Coverage)'
 
-        docker.image('owncloudci/php:7.1').inside {
-            sh "rm -rf config/config.php"
-            sh "./occ m:i --admin-pass=admin"
-            sh "ls -l"
-            sh "pwd"
-            sh "phpdbg -d memory_limit=4096M -rr lib/composer/phpunit/phpunit/phpunit --configuration tests/phpunit-autotest.xml --coverage-clover clover.xml || true"
-            sh "bash <(curl -s https://codecov.io/bash) -t 597a6842-baac-4784-a331-54d6aa9bca34 -f clover.xml"
+        executeAndReport('autotest-results-phpdbg.xml') {
+            sh "echo ${env.BRANCH_NAME}"
+            docker.image('owncloudci/php:7.1').inside {
+                sh "rm -rf config/config.php"
+                sh "./occ m:i --admin-pass=admin"
+                sh "phpdbg -d memory_limit=4096M -rr lib/composer/phpunit/phpunit/phpunit --configuration tests/phpunit-autotest.xml --coverage-clover clover.xml --log-junit autotest-results-phpdbg.xml || true"
+            }
+            sh "bash <(curl -s https://codecov.io/bash) -t 597a6842-baac-4784-a331-54d6aa9bca34 -B ${env.BRANCH_NAME} -f clover.xml"
         }
 
     stage 'make dist'
