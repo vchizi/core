@@ -31,7 +31,7 @@ timestampedNode('SLAVE') {
             sh "./occ m:i --admin-pass=admin"
             sh "ls -l"
             sh "pwd"
-            sh "phpdbg -d memory_limit=4096M -rr lib/composer/phpunit/phpunit/phpunit --configuration tests/phpunit-autotest.xml --coverage-clover clover.xml"
+            sh "phpdbg -d memory_limit=4096M -rr lib/composer/phpunit/phpunit/phpunit --configuration tests/phpunit-autotest.xml --coverage-clover clover.xml || true"
             sh "bash <(curl -s https://codecov.io/bash) -t 597a6842-baac-4784-a331-54d6aa9bca34 -f clover.xml"
         }
 
