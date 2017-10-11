@@ -248,6 +248,11 @@ class MountPoint implements IMountPoint {
 	 * @return int
 	 */
 	public function getStorageRootId() {
-		return (int)$this->getStorage()->getCache()->getId('');
+		$storage = $this->getStorage();
+		if ($storage !== null && !$this->invalidStorage) {
+			return (int)$storage->getCache()->getId('');
+		}
+		// invalid storage
+		return -1;
 	}
 }
