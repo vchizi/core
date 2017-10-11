@@ -191,7 +191,7 @@ class ServerFactory {
 				$filePropertiesPlugin->pathFilter = function($path) {
 					$pathInfo = $this->request->getPathInfo();
 					// matches '/webdav', '/webdav/', '/webdav/adcd' but not '/webdavabcd'
-					return preg_match('!^/webdav(/|\z)!', $pathInfo);
+					return (preg_match('!^/webdav(/|\z)!', $pathInfo) === 1);
 				};
 				$server->addPlugin($filePropertiesPlugin);
 
@@ -204,7 +204,7 @@ class ServerFactory {
 				);
 				$miscPropertiesPlugin->pathFilter = function($path) {
 					$pathInfo = $this->request->getPathInfo();
-					return preg_match('!^/webdav(/|\z)!', $pathInfo);
+					return (preg_match('!^/webdav(/|\z)!', $pathInfo)  === 0);
 				};
 				$server->addPlugin($miscPropertiesPlugin);
 			}
