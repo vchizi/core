@@ -907,6 +907,10 @@ class Server extends ServerContainer implements IServerContainer {
 		return $this->query('AvatarManager');
 	}
 
+	public function getMetaData() {
+		return $this->query('MetaData');
+	}
+
 	/**
 	 * Returns the root folder of ownCloud's data directory
 	 *
